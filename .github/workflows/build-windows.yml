@@ -13,10 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Compile cars.cpp
-        run: |
-          cl /EHsc cars.cpp /Fe:cars.exe
-        shell: cmd
+        run: cl /EHsc cars.cpp /Fe:cars.exe
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
