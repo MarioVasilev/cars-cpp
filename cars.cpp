@@ -17,7 +17,6 @@ struct Car {
     char renterEGN[11];
 };
 
-// -------------------------------------------------
 
 void saveToFile(Car cars[], int carCount) {
     ofstream file(FILE_NAME, ios::binary);
@@ -34,8 +33,6 @@ void loadFromFile(Car cars[], int& carCount) {
     file.close();
 }
 
-// -------------------------------------------------
-
 void printCar(const Car& c) {
     cout << c.brand << " " << c.model
          << ", " << c.year
@@ -47,7 +44,19 @@ void printCar(const Car& c) {
     cout << endl;
 }
 
-// -------------------------------------------------
+int findCarByReg(Car cars[], int carCount, const char* reg) {
+    for (int i = 0; i < carCount; i++)
+        if (!strcmp(cars[i].regNumber, reg))
+            return i;
+    return -1;
+}
+
+bool renterHasCar(Car cars[], int carCount, const char* egn) {
+    for (int i = 0; i < carCount; i++)
+        if (cars[i].busy && !strcmp(cars[i].renterEGN, egn))
+            return true;
+    return false;
+}
 
 void addCars(Car cars[], int& carCount) {
     int n;
@@ -55,7 +64,7 @@ void addCars(Car cars[], int& carCount) {
     cin >> n;
 
     if (carCount + n > MAX_CARS) {
-        cout << "Надвишен максимален брой коли!\n";
+        cout << "Надвишен максимален брой автомобили!\n";
         return;
     }
 
@@ -72,14 +81,10 @@ void addCars(Car cars[], int& carCount) {
     }
 }
 
-// -------------------------------------------------
-
 void printAllCars(Car cars[], int carCount) {
     for (int i = 0; i < carCount; i++)
         printCar(cars[i]);
 }
-
-// -------------------------------------------------
 
 void mostPowerfulCars(Car cars[], int carCount) {
     int maxPower = 0;
@@ -92,23 +97,50 @@ void mostPowerfulCars(Car cars[], int carCount) {
             printCar(cars[i]);
 }
 
-// -------------------------------------------------
+void searchByYear(Car cars[], int carCount) {
+    int y;
+    cout << "Въведи година: ";
+    cin >> y;
 
-int findCarByReg(Car cars[], int carCount, const char* reg) {
     for (int i = 0; i < carCount; i++)
-        if (!strcmp(cars[i].regNumber, reg))
-            return i;
-    return -1;
+        if (cars[i].year == y)
+            printCar(cars[i]);
 }
 
-bool renterHasCar(Car cars[], int carCount, const char* egn) {
-    for (int i = 0; i < carCount; i++)
-        if (cars[i].busy && !strcmp(cars[i].renterEGN, egn))
-            return true;
-    return false;
+void sortByPowerDesc(Car cars[], int carCount) {
+    for (int i = 0; i < carCount - 1; i++)
+        for (int j = i + 1; j < carCount; j++)
+            if (cars[i].power < cars[j].power)
+                swap(cars[i], cars[j]);
 }
 
-// -------------------------------------------------
+void freeCarsSorted(Car cars[], int carCount) {
+    Car temp[MAX_CARS];
+    int cnt = 0;
+
+    for (int i = 0; i < carCount; i++)
+        if (!cars[i].busy)
+            temp[cnt++] = cars[i];
+
+    for (int i = 0; i < cnt - 1; i++)
+        for (int j = i + 1; j < cnt; j++)
+            if (strcmp(temp[i].regNumber, temp[j].regNumber) > 0)
+                swap(temp[i], temp[j]);
+
+    for (int i = 0; i < cnt; i++)
+        printCar(temp[i]);
+}
+
+void searchByBrandModel(Car cars[], int carCount) {
+    char b[20], m[20];
+    cout << "Марка: "; cin >> b;
+    cout << "Модел: "; cin >> m;
+
+    for (int i = 0; i < carCount; i++)
+        if (!strcmp(cars[i].brand, b) &&
+            !strcmp(cars[i].model, m))
+            printCar(cars[i]);
+}
 
 void rentCar(Car cars[], int carCount) {
     char reg[15];
@@ -116,8 +148,13 @@ void rentCar(Car cars[], int carCount) {
     cin >> reg;
 
     int idx = findCarByReg(cars, carCount, reg);
-    if (idx == -1 || cars[idx].busy) {
-        cout << "Невалидна операция\n";
+    if (idx == -1) {
+        cout << "Не е открит автомобил с този номер\n";
+        return;
+    }
+
+    if (cars[idx].busy) {
+        cout << "Автомобилът вече е ангажиран\n";
         return;
     }
 
@@ -127,30 +164,47 @@ void rentCar(Car cars[], int carCount) {
 
     if (renterHasCar(cars, carCount, egn)) {
         char ch;
-        cout << "Има вече кола. Още една? (y/n): ";
+        cout << "Лицето вече има кола. Още една? (y/n): ";
         cin >> ch;
-        if (ch != 'y') return;
+        if (ch != 'y') {
+            cout << "Отказано наемане\n";
+            return;
+        }
     }
 
     cars[idx].busy = true;
     strcpy(cars[idx].renterEGN, egn);
+    cout << "Колата е наета успешно\n";
 }
-
-// -------------------------------------------------
 
 void returnCar(Car cars[], int carCount) {
     char reg[15];
-    cout << "Рег. номер: ";
+    cout << "Рег. номер за връщане: ";
     cin >> reg;
 
     int idx = findCarByReg(cars, carCount, reg);
-    if (idx == -1 || !cars[idx].busy) return;
+    if (idx == -1 || !cars[idx].busy) {
+        cout << "Невалидна операция\n";
+        return;
+    }
 
     cars[idx].busy = false;
     strcpy(cars[idx].renterEGN, "-");
+    cout << "Колата е върната\n";
 }
 
-// -------------------------------------------------
+void menu() {
+    cout << "\n1. Добавяне на коли";
+    cout << "\n2. Извеждане на всички коли";
+    cout << "\n3. Най-мощни коли";
+    cout << "\n4. Търсене по година";
+    cout << "\n5. Подреждане по мощност";
+    cout << "\n6. Свободни коли (сортирани)";
+    cout << "\n7. Търсене по марка и модел";
+    cout << "\n8. Наемане на кола";
+    cout << "\n9. Връщане на кола";
+    cout << "\n0. Изход\n";
+}
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
@@ -163,13 +217,18 @@ int main() {
 
     int choice;
     do {
-        cout << "\n1. Добавяне\n2. Всички\n3. Най-мощни\n8. Наем\n9. Връщане\n0. Изход\n";
+        menu();
+        cout << "Избор: ";
         cin >> choice;
 
         switch (choice) {
             case 1: addCars(cars, carCount); break;
             case 2: printAllCars(cars, carCount); break;
             case 3: mostPowerfulCars(cars, carCount); break;
+            case 4: searchByYear(cars, carCount); break;
+            case 5: sortByPowerDesc(cars, carCount); break;
+            case 6: freeCarsSorted(cars, carCount); break;
+            case 7: searchByBrandModel(cars, carCount); break;
             case 8: rentCar(cars, carCount); break;
             case 9: returnCar(cars, carCount); break;
         }
